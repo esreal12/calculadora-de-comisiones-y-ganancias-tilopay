@@ -9,12 +9,12 @@
       font-family: sans-serif;
       padding: 2rem;
       background-color: #f9f9f9;
-      max-width: 400px;
+      max-width: 480px;
       margin: auto;
     }
     h1 {
       text-align: center;
-      font-size: 1.5rem;
+      font-size: 1.6rem;
     }
     label, input, button {
       display: block;
@@ -33,35 +33,69 @@
       font-size: 1rem;
       cursor: pointer;
     }
-    #resultado {
-      font-size: 1.2rem;
+    .result {
+      font-size: 1rem;
       font-weight: bold;
       text-align: center;
       margin-top: 1rem;
+    }
+    .section {
+      margin-bottom: 2rem;
+    }
+    .highlight {
+      color: #2d7dff;
     }
   </style>
 </head>
 <body>
   <h1>Calculadora de Ganancia</h1>
-  <label for="monto">Monto a cobrar ($):</label>
-  <input type="number" id="monto" placeholder="Ej. 100" step="0.01" min="0">
-  <button onclick="calcularGanancia()">Calcular</button>
-  <div id="resultado"></div>
+
+  <div class="section">
+    <label for="monto">¿Cuánto desea cobrar? ($):</label>
+    <input type="number" id="monto" placeholder="Ej. 100" step="0.01" min="0">
+    <button onclick="calcularGanancia()">Calcular ganancia neta</button>
+    <div id="resultadoGanancia" class="result"></div>
+  </div>
+
+  <div class="section">
+    <label for="gananciaDeseada">¿Cuánto desea recibir? ($):</label>
+    <input type="number" id="gananciaDeseada" placeholder="Ej. 100" step="0.01" min="0">
+    <button onclick="calcularMontoRequerido()">Calcular monto a cobrar</button>
+    <div id="resultadoInverso" class="result"></div>
+  </div>
 
   <script>
+    const porcentajeComision = 0.0425;
+    const comisionFija = 0.35;
+
     function calcularGanancia() {
       const monto = parseFloat(document.getElementById("monto").value);
       if (isNaN(monto) || monto <= 0) {
-        document.getElementById("resultado").textContent = "Por favor, ingrese un monto válido.";
+        document.getElementById("resultadoGanancia").textContent = "Por favor, ingrese un monto válido.";
         return;
       }
 
-      const porcentajeComision = 0.0425;
-      const comisionFija = 0.35;
       const comisionTotal = monto * porcentajeComision + comisionFija;
       const ganancia = monto - comisionTotal;
 
-      document.getElementById("resultado").textContent = `Usted recibirá: $${ganancia.toFixed(2)}`;
+      document.getElementById("resultadoGanancia").innerHTML =
+        `Comisión: <span class='highlight'>$${comisionTotal.toFixed(2)}</span><br>` +
+        `Usted recibirá: <span class='highlight'>$${ganancia.toFixed(2)}</span>`;
+    }
+
+    function calcularMontoRequerido() {
+      const gananciaDeseada = parseFloat(document.getElementById("gananciaDeseada").value);
+      if (isNaN(gananciaDeseada) || gananciaDeseada <= 0) {
+        document.getElementById("resultadoInverso").textContent = "Por favor, ingrese una ganancia válida.";
+        return;
+      }
+
+      const montoNecesario = (gananciaDeseada + comisionFija) / (1 - porcentajeComision);
+      const comisionCalculada = montoNecesario - gananciaDeseada;
+
+      document.getElementById("resultadoInverso").innerHTML =
+        `Debe cobrar: <span class='highlight'>$${montoNecesario.toFixed(2)}</span><br>` +
+        `La comisión será de: <span class='highlight'>$${comisionCalculada.toFixed(2)}</span>`;
     }
   </script>
 </body>
