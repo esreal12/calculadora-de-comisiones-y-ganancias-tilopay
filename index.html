@@ -1,102 +1,93 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculadora de Ganancia</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Ganancia · v2</title>
+  <!-- Cache busting for GitHub Pages -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background-color: #f9f9f9;
-      max-width: 480px;
-      margin: auto;
-    }
-    h1 {
-      text-align: center;
-      font-size: 1.6rem;
-    }
-    label, input, button {
-      display: block;
-      width: 100%;
-      margin-bottom: 1rem;
-    }
-    input {
-      padding: 0.5rem;
-      font-size: 1rem;
-    }
-    button {
-      background-color: #2d7dff;
-      color: white;
-      border: none;
-      padding: 0.75rem;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    .result {
-      font-size: 1rem;
-      font-weight: bold;
-      text-align: center;
-      margin-top: 1rem;
-    }
-    .section {
-      margin-bottom: 2rem;
-    }
-    .highlight {
-      color: #2d7dff;
-    }
+    :root{--bg:#0b0b10;--panel:#12121a;--muted:#9aa0aa;--text:#e9eef5;--brand:#7AF401;--border:#232334}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;background:var(--bg);color:var(--text);min-height:100dvh;display:grid;place-items:start center;padding:32px}
+    .wrap{width:100%;max-width:520px;background:#14141e;border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+    h1{margin:0 0 4px 0;font-size:22px}
+    .muted{color:var(--muted);margin-bottom:18px}
+    label{display:block;margin:12px 0 6px 0}
+    input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0f0f18;color:var(--text);font-size:16px}
+    button{width:100%;margin-top:10px;padding:12px;border-radius:10px;border:1px solid var(--border);background:#1a1a26;color:var(--text);font-weight:700;cursor:pointer}
+    button:hover{border-color:var(--brand);color:var(--brand)}
+    .result{margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#0f0f18}
+    .row{display:flex;justify-content:space-between;margin:6px 0}
+    .brand{color:var(--brand)}
+    .small{font-size:12px;color:var(--muted)}
   </style>
 </head>
 <body>
-  <h1>Calculadora de Ganancia</h1>
+  <div class="wrap">
+    <h1>Calculadora de Ganancia <span class="brand">v2</span></h1>
+    <div class="muted">Comisión: <strong>4.25%</strong> + <strong>$0.35</strong> por transacción</div>
 
-  <div class="section">
-    <label for="monto">¿Cuánto desea cobrar? ($):</label>
-    <input type="number" id="monto" placeholder="Ej. 100" step="0.01" min="0">
-    <button onclick="calcularGanancia()">Calcular ganancia neta</button>
-    <div id="resultadoGanancia" class="result"></div>
-  </div>
+    <label for="monto">¿Cuánto desea cobrar? ($)</label>
+    <input type="number" id="monto" placeholder="Ej. 100" step="0.01" min="0" />
+    <button id="btn-calc">Calcular ganancia neta</button>
+    <div id="out-neto" class="result" hidden></div>
 
-  <div class="section">
-    <label for="gananciaDeseada">¿Cuánto desea recibir? ($):</label>
-    <input type="number" id="gananciaDeseada" placeholder="Ej. 100" step="0.01" min="0">
-    <button onclick="calcularMontoRequerido()">Calcular monto a cobrar</button>
-    <div id="resultadoInverso" class="result"></div>
+    <label for="neto">¿Cuánto desea recibir neto? ($)</label>
+    <input type="number" id="neto" placeholder="Ej. 100" step="0.01" min="0" />
+    <button id="btn-inverso">Calcular monto a cobrar</button>
+    <div id="out-inverso" class="result" hidden></div>
+
+    <div class="small" style="margin-top:10px">Sugerencia: si tu navegador muestra la versión anterior, usa <strong>Hard Reload</strong> (Cmd+Shift+R / Ctrl+F5). Esta página además envía cabeceras de no-cache a través de meta tags.</div>
   </div>
 
   <script>
-    const porcentajeComision = 0.0425;
-    const comisionFija = 0.35;
+    const P = 0.0425; // porcentaje
+    const F = 0.35;   // fija
 
-    function calcularGanancia() {
-      const monto = parseFloat(document.getElementById("monto").value);
-      if (isNaN(monto) || monto <= 0) {
-        document.getElementById("resultadoGanancia").textContent = "Por favor, ingrese un monto válido.";
-        return;
-      }
+    const fmt = v => `$${Number(v).toFixed(2)}`;
 
-      const comisionTotal = monto * porcentajeComision + comisionFija;
-      const ganancia = monto - comisionTotal;
-
-      document.getElementById("resultadoGanancia").innerHTML =
-        `Comisión: <span class='highlight'>$${comisionTotal.toFixed(2)}</span><br>` +
-        `Usted recibirá: <span class='highlight'>$${ganancia.toFixed(2)}</span>`;
+    function calcNeto(monto){
+      const comision = monto * P + F;
+      const neto = monto - comision;
+      return {comision, neto};
     }
 
-    function calcularMontoRequerido() {
-      const gananciaDeseada = parseFloat(document.getElementById("gananciaDeseada").value);
-      if (isNaN(gananciaDeseada) || gananciaDeseada <= 0) {
-        document.getElementById("resultadoInverso").textContent = "Por favor, ingrese una ganancia válida.";
-        return;
-      }
-
-      const montoNecesario = (gananciaDeseada + comisionFija) / (1 - porcentajeComision);
-      const comisionCalculada = montoNecesario - gananciaDeseada;
-
-      document.getElementById("resultadoInverso").innerHTML =
-        `Debe cobrar: <span class='highlight'>$${montoNecesario.toFixed(2)}</span><br>` +
-        `La comisión será de: <span class='highlight'>$${comisionCalculada.toFixed(2)}</span>`;
+    function calcBruto(netoDeseado){
+      const bruto = (netoDeseado + F) / (1 - P);
+      const comision = bruto - netoDeseado;
+      return {bruto, comision};
     }
+
+    const outN = document.getElementById('out-neto');
+    const outI = document.getElementById('out-inverso');
+
+    document.getElementById('btn-calc').addEventListener('click', ()=>{
+      const monto = parseFloat(document.getElementById('monto').value);
+      if(!monto || monto<=0){ outN.hidden=false; outN.textContent='Ingrese un monto válido.'; return; }
+      const {comision, neto} = calcNeto(monto);
+      outN.hidden=false;
+      outN.innerHTML = `
+        <div class="row"><span>Comisión total</span><strong>${fmt(comision)}</strong></div>
+        <div class="row"><span>Usted recibirá</span><strong class="brand">${fmt(neto)}</strong></div>
+      `;
+    });
+
+    document.getElementById('btn-inverso').addEventListener('click', ()=>{
+      const neto = parseFloat(document.getElementById('neto').value);
+      if(!neto || neto<=0){ outI.hidden=false; outI.textContent='Ingrese una cifra neta válida.'; return; }
+      const {bruto, comision} = calcBruto(neto);
+      outI.hidden=false;
+      outI.innerHTML = `
+        <div class="row"><span>Debe cobrar</span><strong class="brand">${fmt(bruto)}</strong></div>
+        <div class="row"><span>Comisión estimada</span><strong>${fmt(comision)}</strong></div>
+      `;
+    });
+
+    // Version visible para depurar caché
+    console.log('Calculator version v2', new Date().toISOString());
   </script>
 </body>
 </html>
